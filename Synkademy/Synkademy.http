@@ -1,0 +1,6 @@
+@Synkademy_HostAddress = http://localhost:5037
+
+GET {{Synkademy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
