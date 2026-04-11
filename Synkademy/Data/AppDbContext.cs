@@ -12,6 +12,9 @@ namespace Synkademy.Data
         public DbSet<ResearchArea> ResearchAreas => Set<ResearchArea>();
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<ProjectInterest> ProjectInterests => Set<ProjectInterest>();
+        public DbSet<SupervisorResearchArea> SupervisorResearchAreas => Set<SupervisorResearchArea>();
+        public DbSet<ProjectResearchArea> ProjectResearchAreas => Set<ProjectResearchArea>();
+        public DbSet<ProjectTag> ProjectTags => Set<ProjectTag>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
