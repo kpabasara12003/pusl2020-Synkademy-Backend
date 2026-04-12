@@ -20,12 +20,16 @@ namespace Synkademy.Data
             // 1. Composite Keys for Junction Tables (All EF Core needs!)
             modelBuilder.Entity<ProjectResearchArea>()
                 .HasKey(x => new { x.ProjectId, x.ResearchAreaId });
+            // Map to existing DB table name (phpMyAdmin shows plural/lowercase names)
+            modelBuilder.Entity<ProjectResearchArea>().ToTable("projectresearchareas");
 
             modelBuilder.Entity<SupervisorResearchArea>()
                 .HasKey(x => new { x.SupervisorId, x.ResearchAreaId });
+            modelBuilder.Entity<SupervisorResearchArea>().ToTable("supervisorresearchareas");
 
             modelBuilder.Entity<ProjectTag>()
                 .HasKey(x => new { x.ProjectId, x.TagId });
+            modelBuilder.Entity<ProjectTag>().ToTable("projecttags");
 
             // 2. Your Team's Original Mappings
             modelBuilder.Entity<Project>()
