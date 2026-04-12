@@ -50,7 +50,7 @@ public class ProjectsController : ControllerBase
                     _context.ResearchAreas.Add(ra);
                     await _context.SaveChangesAsync();
                 }
-                project.ResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
+                project.ProjectResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
             }
         }
 
@@ -82,7 +82,7 @@ public class ProjectsController : ControllerBase
         var list = await _context.Projects
             .Where(p => p.StudentId == studentId)
             .Include(p => p.Supervisor)
-            .Include(p => p.ResearchAreas).ThenInclude(pr => pr.ResearchArea)
+            .Include(p => p.ProjectResearchAreas).ThenInclude(pr => pr.ResearchArea)
             .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
@@ -99,7 +99,7 @@ public class ProjectsController : ControllerBase
             Status = project.Status,
             CreatedAt = project.CreatedAt,
             ProposalFilePath = project.ProposalFilePath,
-            ResearchAreas = project.ResearchAreas.Select(x => x.ResearchArea.Name).ToList(),
+            ResearchAreas = project.ProjectResearchAreas.Select(x => x.ResearchArea.Name).ToList(),
             Tags = project.Tags.Select(x => x.Tag.Name).ToList(),
             SupervisorName = project.Status == "Matched" && project.Supervisor != null ? project.Supervisor.FullName : null,
             SupervisorEmail = project.Status == "Matched" && project.Supervisor != null ? project.Supervisor.Email : null
