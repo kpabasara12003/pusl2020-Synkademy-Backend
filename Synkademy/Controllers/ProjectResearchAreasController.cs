@@ -20,12 +20,12 @@ public class ProjectResearchAreasController : ControllerBase
     public async Task<IActionResult> GetByProject(int projectId)
     {
         var project = await _context.Projects
-            .Include(p => p.ResearchAreas).ThenInclude(pr => pr.ResearchArea)
+            .Include(p => p.ProjectResearchAreas).ThenInclude(pr => pr.ResearchArea)
             .FirstOrDefaultAsync(p => p.Id == projectId);
 
         if (project == null) return NotFound();
 
-        var list = project.ResearchAreas.Select(pr => new { pr.ResearchAreaId, pr.ResearchArea.Name }).ToList();
+        var list = project.ProjectResearchAreas.Select(pr => new { pr.ResearchAreaId, pr.ResearchArea.Name }).ToList();
         return Ok(list);
     }
 

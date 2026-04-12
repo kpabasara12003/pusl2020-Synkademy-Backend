@@ -25,6 +25,6 @@
         public ICollection<ProjectTag> Tags { get; set; } = new List<ProjectTag>();
         public ICollection<ProjectInterest> Interests { get; set; } = new List<ProjectInterest>();
 
-        public ICollection<ProjectResearchArea>? ProjectResearchAreas { get; set; }
+        public ICollection<ProjectResearchArea> ProjectResearchAreas { get; set; } = new List<ProjectResearchArea>();
     }
 }
