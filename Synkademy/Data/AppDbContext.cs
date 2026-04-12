@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Synkademy.Models;
 
 namespace Synkademy.Data
@@ -18,17 +17,21 @@ namespace Synkademy.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-         
+            // 1. Composite Keys for Junction Tables (All EF Core needs!)
             modelBuilder.Entity<ProjectResearchArea>()
                 .HasKey(x => new { x.ProjectId, x.ResearchAreaId });
+            // Map to existing DB table name (phpMyAdmin shows plural/lowercase names)
+            modelBuilder.Entity<ProjectResearchArea>().ToTable("projectresearchareas");
 
             modelBuilder.Entity<SupervisorResearchArea>()
                 .HasKey(x => new { x.SupervisorId, x.ResearchAreaId });
+            modelBuilder.Entity<SupervisorResearchArea>().ToTable("supervisorresearchareas");
 
             modelBuilder.Entity<ProjectTag>()
                 .HasKey(x => new { x.ProjectId, x.TagId });
+            modelBuilder.Entity<ProjectTag>().ToTable("projecttags");
 
-     
+            // 2. Your Team's Original Mappings
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.Student)
                 .WithMany(s => s.Projects)
@@ -51,7 +54,7 @@ namespace Synkademy.Data
                 .WithMany(e => e.Interests)
                 .HasForeignKey(pi => pi.SupervisorId);
 
-        
+            // 3. Your Team's Indexes
             modelBuilder.Entity<Student>()
                 .HasIndex(s => s.Email).IsUnique();
 
@@ -64,5 +67,6 @@ namespace Synkademy.Data
             modelBuilder.Entity<Tag>()
                 .HasIndex(t => t.Name).IsUnique();
         }
+
     }
 }

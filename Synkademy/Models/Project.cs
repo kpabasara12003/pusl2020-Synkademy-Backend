@@ -22,8 +22,9 @@
         public Student Student { get; set; } = null!;
         public Employee? Supervisor { get; set; }
 
-        public ICollection<ProjectResearchArea> ResearchAreas { get; set; } = new List<ProjectResearchArea>();
         public ICollection<ProjectTag> Tags { get; set; } = new List<ProjectTag>();
         public ICollection<ProjectInterest> Interests { get; set; } = new List<ProjectInterest>();
+
+        public ICollection<ProjectResearchArea>? ProjectResearchAreas { get; set; }
     }
 }
