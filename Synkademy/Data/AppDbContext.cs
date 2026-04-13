@@ -67,8 +67,6 @@ namespace Synkademy.Data
             modelBuilder.Entity<Tag>()
                 .HasIndex(t => t.Name).IsUnique();
 
-            modelBuilder.Entity<ProjectResearchArea>()
-                .HasKey(x => new { x.ProjectId, x.ResearchAreaId });
         }
 
     }
