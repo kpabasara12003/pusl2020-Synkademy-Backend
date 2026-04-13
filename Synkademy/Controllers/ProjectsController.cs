@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using Synkademy.Data;
 using Synkademy.DTOs;
 using Synkademy.Models;
@@ -38,17 +40,15 @@ public class ProjectsController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        // Attach research areas and tags if provided
+        // Attach research areas and tags by id
         if (request.ResearchAreas != null)
         {
-            foreach (var name in request.ResearchAreas.Distinct())
+            foreach (var raId in request.ResearchAreas.Distinct())
             {
-                var ra = await _context.ResearchAreas.FirstOrDefaultAsync(r => r.Name == name);
+                var ra = await _context.ResearchAreas.FindAsync(raId);
                 if (ra == null)
                 {
-                    ra = new ResearchArea { Name = name };
-                    _context.ResearchAreas.Add(ra);
-                    await _context.SaveChangesAsync();
+                    return NotFound($"Research area with id {raId} not found.");
                 }
                 project.ProjectResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
             }
@@ -56,16 +56,14 @@ public class ProjectsController : ControllerBase
 
         if (request.Tags != null)
         {
-            foreach (var name in request.Tags.Distinct())
+            foreach (var tagId in request.Tags.Distinct())
             {
-                var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == name);
+                var tag = await _context.Tags.FindAsync(tagId);
                 if (tag == null)
                 {
-                    tag = new Tag { Name = name };
-                    _context.Tags.Add(tag);
-                    await _context.SaveChangesAsync();
+                    return NotFound($"Tag with id {tagId} not found.");
                 }
-                project.Tags.Add(new ProjectTag { Project = project, Tag = tag });
+                project.Tags.Add(new ProjectTag { Project = project, Tag = tag, TagId = tag.Id });
             }
         }
 
