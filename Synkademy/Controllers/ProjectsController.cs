@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using Synkademy.Data;
 using Synkademy.DTOs;
 using Synkademy.Models;
@@ -48,11 +50,7 @@ public class ProjectsController : ControllerBase
                 {
                     return NotFound($"Research area with id {raId} not found.");
                 }
-<<<<<<< Updated upstream
-                project.ResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
-=======
-                project.ProjectResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra, ResearchAreaId = ra.Id });
->>>>>>> Stashed changes
+                project.ResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra, ResearchAreaId = ra.Id });
             }
         }
 
