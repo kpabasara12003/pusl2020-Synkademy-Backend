@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Synkademy.Data;
 using Synkademy.DTOs;
+using Synkademy.Models;
 
 namespace Synkademy.Controllers;
 
@@ -16,82 +17,153 @@ public class BlindReviewController : ControllerBase
         _context = context;
     }
 
+    // GET MATCHING PROJECTS
     [HttpGet("{supervisorId}/projects")]
-    public async Task<IActionResult> GetProjects(
-        int supervisorId,
-        [FromQuery] ProjectQueryDto query)
+    public async Task<IActionResult> GetProjects(int supervisorId)
     {
+        var supervisorAreaIds = await _context.SupervisorResearchAreas
+            .Where(x => x.SupervisorId == supervisorId)
+            .Select(x => x.ResearchAreaId)
+            .ToListAsync();
+
+        var projects = await _context.Projects
+            .Where(p => p.Status == "Pending" && p.SupervisorId == null)
+            .Where(p => p.ProjectResearchAreas
+                .Any(pr => supervisorAreaIds.Contains(pr.ResearchAreaId)))
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.ShortDescription,
+                p.TechStack,
+                ResearchAreas = p.ProjectResearchAreas
+                    .Select(x => x.ResearchArea.Name)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(projects);
+    }
+
+    // PROJECT DETAILS (BLIND)
+    [HttpGet("project/{projectId}")]
+    public async Task<IActionResult> GetProjectDetails(int projectId)
+    {
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId)
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.ShortDescription,
+                p.Abstract,
+                p.TechStack,
+                p.CreatedAt,
+
+                ResearchAreas = p.ProjectResearchAreas
+                    .Select(x => x.ResearchArea.Name)
+                    .ToList(),
+
+                Tags = p.Tags
+                    .Select(t => t.Tag.Name)
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (project == null)
+            return NotFound("Project not found.");
+
+        return Ok(project);
+    }
+
+    //ADD INTEREST
+    [HttpPost("{supervisorId}/interest/{projectId}")]
+    public async Task<IActionResult> AddInterest(int supervisorId, int projectId)
+    {
+  
+        var projectExists = await _context.Projects
+            .AnyAsync(p => p.Id == projectId && p.Status == "Pending");
+
+        if (!projectExists)
+            return BadRequest("Project not available.");
+
+        var exists = await _context.ProjectInterests
+            .AnyAsync(x => x.SupervisorId == supervisorId && x.ProjectId == projectId);
+
+        if (exists)
+            return Conflict("Already interested.");
+
+        _context.ProjectInterests.Add(new ProjectInterest
+        {
+            SupervisorId = supervisorId,
+            ProjectId = projectId
+        });
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Interest added." });
+    }
+
+    // REMOVE INTEREST
+    [HttpDelete("{supervisorId}/interest/{projectId}")]
+    public async Task<IActionResult> RemoveInterest(int supervisorId, int projectId)
+    {
+        var interest = await _context.ProjectInterests
+            .FirstOrDefaultAsync(x => x.SupervisorId == supervisorId && x.ProjectId == projectId);
+
+        if (interest == null)
+            return NotFound("Interest not found.");
+
+        _context.ProjectInterests.Remove(interest);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Interest removed." });
+    }
+
+    // ASSIGN PROJECT
+    [HttpPost("{supervisorId}/assign/{projectId}")]
+    public async Task<IActionResult> AssignProject(int supervisorId, int projectId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
-            var supervisor = await _context.Employees
-                .FirstOrDefaultAsync(e => e.Id == supervisorId && e.Role == "Supervisor");
+            var project = await _context.Projects
+                .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (supervisor == null)
-                return NotFound(new { message = "Supervisor not found." });
+            if (project == null)
+                return NotFound("Project not found.");
 
-      
-            var supervisorAreaIds = await _context.SupervisorResearchAreas
-                .Where(x => x.SupervisorId == supervisorId)
-                .Select(x => x.ResearchAreaId)
+            if (project.SupervisorId != null)
+                return BadRequest("Project already assigned.");
+
+            if (project.Status != "Pending")
+                return BadRequest("Project is not available.");
+
+            // Assign supervisor
+            project.SupervisorId = supervisorId;
+            project.Status = "Assigned";
+
+            //DELETE ALL INTERESTS 
+            var interests = await _context.ProjectInterests
+                .Where(x => x.ProjectId == projectId)
                 .ToListAsync();
 
-            if (!supervisorAreaIds.Any())
-                return BadRequest(new { message = "No research areas assigned to supervisor." });
+            _context.ProjectInterests.RemoveRange(interests);
 
-            var projectsQuery = _context.Projects
-                .Where(p => p.Status == "Pending") 
-                .Where(p => p.SupervisorId == null) 
-                .Where(p => p.ProjectResearchAreas!
-                    .Any(pr => supervisorAreaIds.Contains(pr.ResearchAreaId)))
-                .AsQueryable();
-
-
-            if (!string.IsNullOrWhiteSpace(query.Search))
-            {
-                var search = query.Search.ToLower();
-
-                projectsQuery = projectsQuery.Where(p =>
-                    p.Title.ToLower().Contains(search) ||
-                    (p.ShortDescription != null && p.ShortDescription.ToLower().Contains(search)) ||
-                    (p.TechStack != null && p.TechStack.ToLower().Contains(search))
-                );
-            }
-
-
-            if (query.ResearchAreaIds != null && query.ResearchAreaIds.Any())
-            {
-                projectsQuery = projectsQuery.Where(p =>
-                    p.ProjectResearchAreas!
-                        .Any(pr => query.ResearchAreaIds.Contains(pr.ResearchAreaId)));
-            }
-
-            var result = await projectsQuery
-                .Select(p => new ProjectListDto
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    ShortDescription = p.ShortDescription,
-                    TechStack = p.TechStack,
-
-                    ResearchAreas = p.ProjectResearchAreas!
-                        .Select(pr => pr.ResearchArea.Name)
-                        .ToList()
-                })
-                .ToListAsync();
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Ok(new
             {
-                count = result.Count,
-                data = result
+                message = "Project assigned successfully. All interests cleared."
             });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new
-            {
-                message = "An error occurred.",
-                error = ex.Message
-            });
+            await transaction.RollbackAsync();
+            return StatusCode(500, "Assignment failed.");
         }
     }
+
 }
