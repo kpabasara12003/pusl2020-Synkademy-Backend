@@ -8,8 +8,9 @@ namespace Synkademy.DTOs
         public string? Abstract { get; set; }
         public string? TechStack { get; set; }
         public string? ProposalFilePath { get; set; }
-        public List<string>? ResearchAreas { get; set; }
-        public List<string>? Tags { get; set; }
+        // Use IDs for associated entities
+        public List<int>? ResearchAreas { get; set; }
+        public List<int>? Tags { get; set; }
     }
 
     public class UpdateProjectRequest
@@ -20,8 +21,8 @@ namespace Synkademy.DTOs
         public string? Abstract { get; set; }
         public string? TechStack { get; set; }
         public string? ProposalFilePath { get; set; }
-        public List<string>? ResearchAreas { get; set; }
-        public List<string>? Tags { get; set; }
+        public List<int>? ResearchAreas { get; set; }
+        public List<int>? Tags { get; set; }
     }
 
     public class ProjectResponse
