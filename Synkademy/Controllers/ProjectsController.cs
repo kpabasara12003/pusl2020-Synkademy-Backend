@@ -50,7 +50,7 @@ public class ProjectsController : ControllerBase
                 {
                     return NotFound($"Research area with id {raId} not found.");
                 }
-                project.ResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
+                project.ProjectResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra });
             }
         }
 
