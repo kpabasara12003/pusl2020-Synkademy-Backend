@@ -20,13 +20,27 @@ namespace Synkademy.DTOs
         public List<string> ResearchAreas { get; set; } = new();
         public string StudentName { get; set; } = string.Empty;
         public string SupervisorName { get; set; } = string.Empty;
+        public List<string> Tags { get; set; } = new();
         public string Status { get; set; } = string.Empty;
+        public string? TechStack { get; set; }
+        public string? Abstract { get; set; }
+        public string? ProposalFilePath { get; set; }
     }
 
-    // A small DTO just for the supervisor dropdown
     public class SupervisorDropdownDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+    }
+
+    public class AssignSupervisorRequest
+    {
+        public int ProjectId { get; set; }
+        public int SupervisorId { get; set; }
+    }
+
+    public class BreakMatchRequest
+    {
+        public int ProjectId { get; set; }
     }
 }
