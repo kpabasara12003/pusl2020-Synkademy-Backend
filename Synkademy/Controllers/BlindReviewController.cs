@@ -142,7 +142,7 @@ public class BlindReviewController : ControllerBase
 
             // Assign supervisor
             project.SupervisorId = supervisorId;
-            project.Status = "Assigned";
+            project.Status = "Matched";
 
             //DELETE ALL INTERESTS 
             var interests = await _context.ProjectInterests
@@ -164,6 +164,28 @@ public class BlindReviewController : ControllerBase
             await transaction.RollbackAsync();
             return StatusCode(500, "Assignment failed.");
         }
+    }
+
+    //Get Interested Projects
+    [HttpGet("{supervisorId}/interests")]
+    public async Task<IActionResult> GetInterestedProjects(int supervisorId)
+    {
+        var projects = await _context.Projects
+            .Where(p => p.Status == "Pending" && p.SupervisorId == null)
+            .Where(p => p.Interests.Any(i => i.SupervisorId == supervisorId))
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.ShortDescription,
+                p.TechStack,
+                ResearchAreas = p.ProjectResearchAreas
+                    .Select(x => x.ResearchArea.Name)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(projects);
     }
 
 }
