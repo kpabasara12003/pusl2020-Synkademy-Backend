@@ -188,4 +188,88 @@ public class BlindReviewController : ControllerBase
         return Ok(projects);
     }
 
+    //Get Matched Projects (Banners)
+    [HttpGet("{supervisorId}/assigned")]
+    public async Task<IActionResult> GetAssignedProjects(
+    int supervisorId,
+    [FromQuery] string? search)
+    {
+        if (supervisorId <= 0)
+            return BadRequest("Invalid supervisor ID");
+
+        var query = _context.Projects
+            .Where(p => p.SupervisorId == supervisorId);
+
+        //  SEARCH (SQL LIKE)
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search}%";
+
+            query = query.Where(p =>
+                EF.Functions.Like(p.Title, pattern) ||
+                EF.Functions.Like(p.TechStack!, pattern) ||
+                EF.Functions.Like(p.ShortDescription!, pattern)
+            );
+        }
+
+        var projects = await query
+            //  ORDER BY LATEST
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+
+                Student = new
+                {
+                    p.Student.FullName,
+                    p.Student.StudentNumber
+                },
+
+                p.ShortDescription,
+                p.TechStack,
+
+                ResearchAreas = p.ProjectResearchAreas
+                    .Select(x => x.ResearchArea.Name)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(projects);
+    }
+
+    //Get Matched Projects (In-depth)
+    [HttpGet("assigned/{projectId}/details")]
+    public async Task<IActionResult> GetAssignedProjectDetails(int projectId)
+    {
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId)
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.ShortDescription,
+                p.Abstract,
+                p.TechStack,
+                p.CreatedAt,
+                p.Status,
+                
+                Student = new
+                {
+                    p.Student.FullName,
+                    p.Student.StudentNumber,
+                    p.Student.Email
+                },
+                ResearchAreas = p.ProjectResearchAreas
+                    .Select(x => x.ResearchArea.Name)
+                    .ToList(),
+                Tags = p.Tags
+            })
+            .FirstOrDefaultAsync();
+
+        if (project == null) return NotFound("Project details not found.");
+
+        return Ok(project);
+    }
+
 }
