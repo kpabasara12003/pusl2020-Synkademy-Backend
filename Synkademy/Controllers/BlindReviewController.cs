@@ -21,6 +21,10 @@ public class BlindReviewController : ControllerBase
     [HttpGet("{supervisorId}/projects")]
     public async Task<IActionResult> GetProjects(int supervisorId)
     {
+        if (supervisorId <= 0)
+            return BadRequest("Invalid supervisor ID");
+
+        // Get supervisor research areas
         var supervisorAreaIds = await _context.SupervisorResearchAreas
             .Where(x => x.SupervisorId == supervisorId)
             .Select(x => x.ResearchAreaId)
@@ -28,8 +32,12 @@ public class BlindReviewController : ControllerBase
 
         var projects = await _context.Projects
             .Where(p => p.Status == "Pending" && p.SupervisorId == null)
+            // Match supervisor expertise
             .Where(p => p.ProjectResearchAreas
                 .Any(pr => supervisorAreaIds.Contains(pr.ResearchAreaId)))
+            //Exclude already interested projects
+            .Where(p => !p.Interests
+                .Any(i => i.SupervisorId == supervisorId))
             .Select(p => new
             {
                 p.Id,
