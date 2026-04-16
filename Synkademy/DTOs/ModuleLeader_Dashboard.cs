@@ -24,7 +24,7 @@ namespace Synkademy.DTOs
         public string Status { get; set; } = string.Empty;
         public string? TechStack { get; set; }
         public string? Abstract { get; set; }
-        public string? ProposalFilePath { get; set; }
+        //public string? ProposalFilePath { get; set; }
     }
 
     public class SupervisorDropdownDto

@@ -12,7 +12,7 @@
         public int StudentId { get; set; }
         public int? SupervisorId { get; set; }
 
-        public string? ProposalFilePath { get; set; }
+        //public string? ProposalFilePath { get; set; }
 
         public string Status { get; set; } = "Pending";
 

@@ -60,7 +60,7 @@ namespace Synkademy.Controllers
 
                     TechStack = p.TechStack,
                     Abstract = p.Abstract,
-                    ProposalFilePath = p.ProposalFilePath
+                   
 
                 }).ToList();
 
