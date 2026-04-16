@@ -33,7 +33,7 @@ public class ProjectsController : ControllerBase
             ShortDescription = request.ShortDescription,
             Abstract = request.Abstract,
             TechStack = request.TechStack,
-            ProposalFilePath = request.ProposalFilePath,
+
             StudentId = request.StudentId,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow
@@ -95,7 +95,7 @@ public class ProjectsController : ControllerBase
             SupervisorId = project.SupervisorId,
             Status = project.Status,
             CreatedAt = project.CreatedAt,
-            ProposalFilePath = project.ProposalFilePath,
+       
             ResearchAreas = project.ProjectResearchAreas.Select(x => x.ResearchArea.Name).ToList(),
             Tags = project.Tags.Select(x => x.Tag.Name).ToList(),
             SupervisorName = project.Status == "Matched" && project.Supervisor != null ? project.Supervisor.FullName : null,
