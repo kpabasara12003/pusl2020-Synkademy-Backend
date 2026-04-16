@@ -6,6 +6,7 @@ using Synkademy.Models;
 using Synkademy.Services;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using static Synkademy.DTOs.AccountDTO;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -86,7 +87,7 @@ public class AccountController : ControllerBase
         return Ok(new { message = "Supervisor account created successfully.", supervisor.Id });
     }
 
- 
+
     [HttpPost("create/moduleleader")]
     public async Task<IActionResult> CreateModuleLeader([FromBody] CreateModuleLeaderRequest request)
     {
@@ -121,5 +122,89 @@ public class AccountController : ControllerBase
     {
         var user = await _context.Employees.FirstOrDefaultAsync(u => u.Id == moduleLeaderId);
         return user != null && user.Role == "ModuleLeader";
+    }
+
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        // 1. Get Students
+        var students = await _context.Students
+            .Select(s => new UserDto
+            {
+                Id = s.Id,
+                Name = s.FullName,
+                Email = s.Email,
+                Role = "student"
+            }).ToListAsync();
+
+        // 2. Get Employees (Supervisors and Module Leaders)
+        var employees = await _context.Employees
+            .Select(e => new UserDto
+            {
+                Id = e.Id,
+                Name = e.FullName,
+                Email = e.Email,
+                Role = e.Role.ToLower() // Normalizes "ModuleLeader" to "moduleleader" for JS
+            }).ToListAsync();
+
+        // 3. Combine and return
+        var allUsers = students.Concat(employees).ToList();
+        return Ok(allUsers);
+    }
+
+    [HttpPut("update")]
+    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
+    {
+        try
+        {
+            if (request.Role == "student")
+            {
+                var student = await _context.Students.FindAsync(request.Id);
+                if (student == null) return NotFound("Student not found.");
+
+                // Check for email duplicates (excluding themselves)
+                if (await _context.Students.AnyAsync(s => s.Email == request.Email && s.Id != request.Id))
+                    return Conflict("Email is already in use by another student.");
+
+                student.FullName = request.FullName;
+                student.Email = request.Email;
+
+                // Only update password if they typed a new one
+                if (!string.IsNullOrWhiteSpace(request.NewPassword))
+                {
+                    if (request.NewPassword.Length < 6 || request.NewPassword.Length > 9)
+                        return BadRequest("Password must be 6 to 9 characters.");
+
+                    student.PasswordHash = _passwordService.HashPassword(request.NewPassword);
+                }
+            }
+            else // It's a supervisor or module leader
+            {
+                var employee = await _context.Employees.FindAsync(request.Id);
+                if (employee == null) return NotFound("Employee not found.");
+
+                if (await _context.Employees.AnyAsync(e => e.Email == request.Email && e.Id != request.Id))
+                    return Conflict("Email is already in use by another employee.");
+
+                employee.FullName = request.FullName;
+                employee.Email = request.Email;
+
+                if (!string.IsNullOrWhiteSpace(request.NewPassword))
+                {
+                    if (request.NewPassword.Length < 6 || request.NewPassword.Length > 9)
+                        return BadRequest("Password must be 6 to 9 characters.");
+
+                    employee.PasswordHash = _passwordService.HashPassword(request.NewPassword);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n--- UPDATE CRASH ---\n{ex.Message}\n-------------------\n");
+            return StatusCode(500, "Internal server error.");
+        }
     }
 }
