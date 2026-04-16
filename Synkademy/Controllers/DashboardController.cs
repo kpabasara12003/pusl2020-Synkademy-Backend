@@ -21,13 +21,11 @@ namespace Synkademy.Controllers
         [HttpGet("{supervisorId}/relevant-count")]
         public async Task<ActionResult<int>> GetRelevantCount(int supervisorId)
         {
-            // 1. First, grab the specific Research Area IDs that this supervisor specializes in
             var supervisorAreaIds = await _context.SupervisorResearchAreas
                 .Where(sra => sra.SupervisorId == supervisorId)
                 .Select(sra => sra.ResearchAreaId)
                 .ToListAsync();
 
-            // 2. Now, count the available projects, BUT filter them to ensure they have matching areas
             var count = await _context.Projects
                 .Where(p => p.Status == "Pending" && p.SupervisorId == null)
                 .Where(p => p.ProjectResearchAreas.Any(pra => supervisorAreaIds.Contains(pra.ResearchAreaId)))
