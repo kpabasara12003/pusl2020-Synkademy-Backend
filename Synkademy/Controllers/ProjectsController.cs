@@ -105,4 +105,66 @@ public class ProjectsController : ControllerBase
 
         return Ok(resp);
     }
+
+    // PUT api/projects/{id} - update a project (student must own the project)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectRequest request)
+    {
+        var project = await _context.Projects
+            .Include(p => p.ProjectResearchAreas).ThenInclude(pr => pr.ResearchArea)
+            .Include(p => p.Tags)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (project == null) return NotFound();
+        if (project.StudentId != request.StudentId) return Unauthorized();
+        if (project.Status == "Matched") return BadRequest("Cannot edit a matched proposal.");
+
+        project.Title = request.Title;
+        project.ShortDescription = request.ShortDescription;
+        project.Abstract = request.Abstract;
+        project.TechStack = request.TechStack;
+        // ProposalFilePath was removed from the database; no assignment here
+
+        // update research areas
+        project.ProjectResearchAreas.Clear();
+        if (request.ResearchAreas != null)
+        {
+            foreach (var raId in request.ResearchAreas.Distinct())
+            {
+                var ra = await _context.ResearchAreas.FindAsync(raId);
+                if (ra == null) return NotFound($"Research area with id {raId} not found.");
+                project.ProjectResearchAreas.Add(new ProjectResearchArea { Project = project, ResearchArea = ra, ResearchAreaId = ra.Id });
+            }
+        }
+
+        // update tags
+        project.Tags.Clear();
+        if (request.Tags != null)
+        {
+            foreach (var tagId in request.Tags.Distinct())
+            {
+                var tag = await _context.Tags.FindAsync(tagId);
+                if (tag == null) return NotFound($"Tag with id {tagId} not found.");
+                project.Tags.Add(new ProjectTag { Project = project, Tag = tag, TagId = tag.Id });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Project updated." });
+    }
+
+    // DELETE api/projects/{id}?studentId=1 - delete a project (only owner can delete, cannot delete matched)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProject(int id, [FromQuery] int studentId)
+    {
+        var project = await _context.Projects.FindAsync(id);
+        if (project == null) return NotFound();
+        if (project.StudentId != studentId) return Unauthorized();
+        if (project.Status == "Matched") return BadRequest("Cannot delete a matched proposal.");
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Project deleted." });
+    }
 }
