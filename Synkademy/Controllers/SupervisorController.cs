@@ -5,11 +5,11 @@ using Synkademy.DTOs;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SupervisorsController : ControllerBase
+public class SupervisorController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public SupervisorsController(AppDbContext context)
+    public SupervisorController(AppDbContext context)
     {
         _context = context;
     }
